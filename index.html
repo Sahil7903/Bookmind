@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Book Discovery & AI Study Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .spinner { border: 3px solid rgba(0, 0, 0, 0.1); width: 24px; height: 24px; border-radius: 50%; border-left-color: #3b82f6; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .markdown-body h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .markdown-body h2 { font-size: 1.25rem; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .markdown-body h3 { font-size: 1.1rem; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .markdown-body p { margin-bottom: 0.75rem; line-height: 1.6; }
+        .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .markdown-body li { margin-bottom: 0.25rem; }
+        .markdown-body strong { font-weight: 600; color: #1e293b; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 text-white mb-4 shadow-lg shadow-blue-500/30">
+                <i class="fas fa-book-open text-2xl"></i>
+            </div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 mb-2">Book Discovery AI</h1>
+            <p class="text-slate-500">Search any book globally and generate an AI-powered study guide.</p>
+        </header>
+
+        <!-- API Key Config -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row items-end gap-4">
+            <div class="flex-1 w-full">
+                <label for="gemini-key" class="block text-sm font-semibold text-slate-700 mb-2"><i class="fas fa-key text-slate-400 mr-2"></i>Gemini API Key</label>
+                <input type="password" id="gemini-key" placeholder="AIzaSy..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm">
+            </div>
+            <button id="save-key-btn" class="w-full sm:w-auto px-6 py-3 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-700 transition-colors">
+                Save Key
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative mb-8 group">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                <i class="fas fa-search text-slate-400 group-focus-within:text-blue-500 transition-colors"></i>
+            </div>
+            <input type="text" id="search-input" placeholder="Search for books, authors, or topics..." class="w-full pl-12 pr-4 py-4 text-lg bg-white border border-slate-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium">
+        </div>
+
+        <!-- Loading State -->
+        <div id="search-loading" class="hidden flex justify-center items-center py-12">
+            <div class="spinner"></div>
+            <span class="ml-3 text-slate-500 font-medium">Searching global libraries...</span>
+        </div>
+
+        <!-- Results Grid -->
+        <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Initial Empty State -->
+            <div class="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 mb-4">
+                    <i class="fas fa-globe text-2xl text-blue-500"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-700 mb-1">Explore the world's books</h3>
+                <p class="text-slate-500 max-w-sm">Start typing a title, author, or topic to discover books from Google Books and Open Library.</p>
+            </div>
+        </div>
+
+        <!-- AI Lab Modal -->
+        <div id="ai-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+                
+                <div class="p-6 sm:p-8 border-b border-slate-100 flex justify-between items-start bg-white">
+                    <div class="flex gap-5">
+                        <img id="modal-cover" src="" alt="Cover" class="w-20 h-28 object-cover rounded-lg shadow-md hidden">
+                        <div class="pt-1">
+                            <h2 id="modal-title" class="text-2xl font-extrabold text-slate-900 leading-tight mb-1">Title</h2>
+                            <p id="modal-author" class="text-slate-600 font-medium mb-3">Author</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span id="modal-year" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-md"></span>
+                                <span id="modal-isbn" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-md"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="close-modal" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"><i class="fas fa-times"></i></button>
+                </div>
+
+                <div class="p-6 sm:p-8 overflow-y-auto flex-1 bg-slate-50">
+                    <div class="mb-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center"><i class="fas fa-sliders-h text-blue-500 mr-2"></i> Personalize Synthesis</h3>
+                        <select id="learning-style" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none cursor-pointer">
+                            <option value="Reader">General Reader</option>
+                            <option value="Student">Student (Academic Focus)</option>
+                            <option value="Researcher">Researcher (Deep Dive)</option>
+                            <option value="Professional">Professional (Practical Application)</option>
+                        </select>
+                    </div>
+
+                    <button id="generate-btn" class="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 active:scale-[0.99] transition-all shadow-lg shadow-blue-500/25 flex justify-center items-center gap-3 text-lg">
+                        <i class="fas fa-wand-magic-sparkles"></i> Generate AI Study Guide
+                    </button>
+
+                    <div id="ai-loading" class="hidden flex flex-col justify-center items-center py-12">
+                        <div class="spinner border-l-blue-600 w-10 h-10 border-4"></div>
+                        <span class="mt-4 text-slate-600 font-semibold animate-pulse">Synthesizing knowledge base...</span>
+                    </div>
+
+                    <div id="ai-result" class="mt-6 hidden">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">AI Synthesis Complete</h3>
+                        </div>
+                        <div id="ai-content" class="markdown-body bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm text-slate-700">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

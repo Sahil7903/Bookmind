@@ -1,0 +1,6 @@
+{
+  "name": "BookMind AI",
+  "description": "An intelligent AI book knowledge assistant that helps you learn, revise, summarize, and understand books quickly through summaries, chapter-wise takeaways, quizzes, flashcards, mind maps, chatbot, and citation-backed studies.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
